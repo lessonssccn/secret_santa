@@ -91,21 +91,24 @@ while select_group:
 
         action = "-"
         while action not in ("1", "2", "3", "4"):
-            print("Что будем делать дальше? Ввведите новмер одного из возможных действий")
-            print("1 - выбрать другую команду")
+            print("Что будем делать дальше? Ввведи новмер одного из возможных действий")
+            print(f"1 - к распределению сант {'[НЕДОСТУПНО]' if count_person<3 else ''}")
             print(f"2 - повторно проверить анкеты команды {group_name}")
-            print("3 - перейти к распределению сант")
-            print("4 - закончить без распределения сант")
+            print("3 - выбрать другую команду")
+            print("0 - закончить без распределения сант")
             action = input()
 
         if action == "1":
-            break
+            if count_person >= 3:
+                select_group = False
+                break
+            else:
+                print("\nК сожалению сейчас команда не полная\n")
         elif action == "2":
             continue
         elif action == "3":
-            select_group = False
             break
-        elif action == "4":
+        elif action == "0":
             generate = False
             select_group = False
             break
