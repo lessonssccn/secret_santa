@@ -1,0 +1,3 @@
+person_a
+wish 1
+wish 2
