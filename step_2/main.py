@@ -1,146 +1,170 @@
-import os
-from random import shuffle
+#консольное приложение работающее с консольным вводом/выводом получение информации о команде ее учасниках и их желаниях идет через работу
+#с файловой системой и чтения файлов вывод результатов генерации происходит в файлы для каждого санты свой файл с именем кому дарить 
+#из какой анкеты взяты данные и что именно дарить
+#допустимо несколько участие участников с одинаковыми именами
+#каждый участник команды заполняет анкету в текстовом файле с кодировкой utf-8, первая строка файла имя участника, остальные строки пожелания 
+#далее организатор должен поместить все файлы в подпапку пакпи из которой будет запущенна приложение
+#приложение способно рабоать с нескольими командами, каждая команда в своей подпаке
+#после запуска приложение выводим список подпапок находящихся в текущей папке
+#предалая ввести назавание одной из них с проверкой
+#после чего в указанной подпапке происходит считываени списка файлов/анкет
+#и анализ содержимого файлов
+#после чего выводятся разобранные имена участников валидных анкет и ошибки если такоыве есть
+#предлагается несколько вариантов дейсвтий начать генерацию если кол-во участников достаточно 3 и больше, если меньше вариант детоступен
+#остальные варианты это повторное чтение анкет команды, что позволяет организатору внести измения и сазу же перезапустить анализ анкет
+#выбор другой команды
+#отказ от распределения сант
+import os #мипортируем модуль для работы с функциями ос
+from random import shuffle #импортируем функцию перемешивающую элементы списка без 
 
-generate = True
-select_group = True
-while select_group:
-    list_dir = []
-    for item in os.listdir('.'):
-        if os.path.isdir(item):
-            list_dir.append(item)
+generate = True #флаг проверки необходимости генерации распределения сант, пока пользователь не отказался от генерации в явном виде выставлен в истину
+select_group = True # флаг проверки выбора и перевыбора команды, нужен по причине наличия вложенного цикла провекри команды и не обходимости переодически прервать оба цикла разом
+while select_group: # начала цикла выбора команды
+    list_dir = [] # список директорый в текщей папке он же список команд
+    for item in os.listdir('.'):#проходимя по списку файлов и папок в текущей директории
+        if os.path.isdir(item):# если элемент являетмя папкой
+            list_dir.append(item) #добовляем его имя в список папок/команд
 
-    list_dir.sort()
+    list_dir.sort() #сортируем список по алфавиту
 
-    for item in list_dir:
-        print(item, end="\t")
-    print()
+    for item in list_dir: #выводим список команд
+        print(item, end="\t") #через таб
+    print()#добавляем переход на новую строку
 
-    group_name = input("Введи имя команды из предложенных выше: ")
+    group_name = input("Введи имя команды из предложенных выше: ")#получаем имя команды от пользователя
 
-    while group_name not in list_dir:
+    while group_name not in list_dir: #проверяем что пользователь ввел корректное имя
         group_name = input(f"Введенное имя {group_name} отсутвует в списке выше. Попробуй указать дургое: ")
 
-    while True:
+    while True: #цикл проверки анкет команды
         print(f"Проверка анкет команды {group_name}")
 
-        error_format_files = list()
-        form_name = dict()
-        persons = list()
+        error_format_files = list() # список анкет неверно отформатированых содержа менее 2 строк
+        form_name = dict() # словарь содержащий всебе связку имя участника как ключ, занчение сисок анкет где имена одинаоковые, чтобы можно было вывести организатору и он сам решил что с этим делать
+        persons = list()#список в которм будут храниться словари содержащие информацию об участниках имя,желание,имя файла анкеты
 
-        for item in os.listdir(group_name):
-            path = os.path.join(group_name, item)
-            if os.path.isfile(path):
-                file = open(path, "r", encoding="utf-8")
-                rows = file.readlines()
-                file.close()
-                if len(rows) >= 2:
-                    name_person = rows[0].strip()
+        for item in os.listdir(group_name): # проходимся по списку файлов и папок в поддериктории с именем команды
+            path = os.path.join(group_name, item) # формируем относительный путь к файлу анкеты по типу имя_команды/имя_файла_анкеты
+            if os.path.isfile(path):# проверяем что это файл, а не папка или еще что
+                file = open(path, "r", encoding="utf-8") #открываем файл на чтение
+                rows = file.readlines() #получем список всех строк в файле
+                file.close() # за крываем файл
+                if len(rows) >= 2: # проверяем количестов строк
+                    name_person = rows[0].strip() #удаляем пробельные симолы в начале и конце строки
+                    #формируе словать описывающий участника
                     person = {
-                        "name": name_person,
-                        "form": path,
-                        "wish": [s.strip() for s in rows[1:]]
+                        "name": name_person, # имя участника
+                        "form": path, #относительный путь к анкете
+                        "wish": [s.strip() for s in rows[1:]] #список строк желаний проходимся по всем строкам после первой и убираем лишние пробельные символы с начала и конца строки
                     }
-                    persons.append(person)
-                    list_path = form_name.get(name_person, [])
-                    list_path.append(path)
-                    form_name[name_person] = list_path
+                    persons.append(person) #добовляем участника в список участников
+                    list_path = form_name.get(name_person, []) # получем список анкет с таким же именем участника, если его нет создаем пустой список
+                    list_path.append(path) # добавляем в список путь к анкете
+                    form_name[name_person] = list_path # обновляем или добавляем ключ и значение в словаь
                 else:
-                    error_format_files.append(path)
+                    error_format_files.append(path) #если строк меньше двух запомнием файл как неверно отформатированый
 
-        count_person = len(persons)
+        count_person = len(persons) # определяем количество участников
         print(f"Я нашел {count_person} участников")
-        if count_person > 0:
+        if count_person > 0: #если участников больше 0 выводим их
             print("Вот их имена, их желания я показывать не стану, а то магии не будет")
             for index, item in enumerate(persons):
                 print(f"{index+1}) {item['name']}")
 
 
-        erroe_name_person = {}
-        for name_person, list_path in form_name.items():
-            if len(list_path) > 1:
-                erroe_name_person[name_person] = list_path
+        erroe_name_person = {} #словарь куда отбираем имена тех участников которые встречатся в нескольких анкетах
+        for name_person, list_path in form_name.items(): #проходимя по всех ключам и значениям из словаря
+            if len(list_path) > 1:# если больше чем одна анкета в списк
+                erroe_name_person[name_person] = list_path # добавляем в словарь с дубликатами
 
-        error = 0
-        if count_person < 3:
+        error = 0 #счетчик наличия ошибок  нужент чтобы понять показывать сообщение  о то что надо что-то исправлять или нет
+        if count_person < 3: #если участников меньше 3
             error += 1
             print("Упс, похоже в выбранной команде не хватает участников")
             print("Должно быть минимум 3 заполненных анкеты, на 3 разных участников")
-        if len(error_format_files)>0:
+        if len(error_format_files)>0: # если есть файл с не верным форматированием, строк меньше 2
             error += 1
             print("Кажеться у тебя есть неверно заполненые анкеты")
             print("Вот они")
-            for index, item in enumerate(error_format_files):
+            for index, item in enumerate(error_format_files):# выводим пути к файлам 
                 print(f"{index+1}) {item}")
-        if len(erroe_name_person)>0:
+        if len(erroe_name_person)>0: #если есть дубликаты в именах участников
             error += 1
             print(f"Ох, команда {group_name} придется не просто")
             print("Кое-кто не проявил оригинальности при заполнении анект")
             print("Есть одинаковые имена")
             print("Понять кому и что дарить будет не просто")
             print("Вот эти анкеты")
-            for index, name_person in enumerate(erroe_name_person):
-                print(f"{index+1}) имя: {name_person}\nанкеты:")
-                for path in erroe_name_person[name_person]:
-                    print(f"\t{path}")
+            for index, name_person in enumerate(erroe_name_person): #проходимя по словарю 
+                print(f"{index+1}) имя: {name_person}\nанкеты:") #выводим номер и имя на строке ниже выводим "анкеты:"
+                for path in erroe_name_person[name_person]:#выводим пути всех анкет которые содержат данное имя
+                    print(f"\t{path}")#добавляем tab в начале строки чтобы добавить отступ и показать вложенность
                     
 
-        if error>0:
+        if error>0: #выводим только если есть ошибки
             print()
             print("Все можно исправить!")
             print("Попросите участником заполнить анкеты повторно, а потом замените старые на новые")
 
+        #опрашиваем пользователя что будем делать добиваясь выбора одного из дейсвий 1 2 3 0 остальные варианты ввода игнорируем
         action = "-"
-        while action not in ("1", "2", "3", "4"):
+        while action not in ("1", "2", "3", "0"): # 0 не жалательное для нас действие поэтоу его поставили на не самую удобну цифру
             print("Что будем делать дальше? Ввведи новмер одного из возможных действий")
-            print(f"1 - к распределению сант {'[НЕДОСТУПНО]' if count_person<3 else ''}")
+            print(f"1 - к распределению сант {'[НЕДОСТУПНО]' if count_person<3 else ''}") #провряем скольк частников если меньше 3 добовляем приписку о не доступности действия
             print(f"2 - повторно проверить анкеты команды {group_name}")
             print("3 - выбрать другую команду")
             print("0 - закончить без распределения сант")
             action = input()
 
-        if action == "1":
-            if count_person >= 3:
-                select_group = False
-                break
+        if action == "1": #перейти к распределению
+            if count_person >= 3: #только если количество участников удовлетовряет услови 3 и более
+                select_group = False # выставляем флаг вывбора групы в лож
+                break #прерываем внутрений циал тк во внешнем циле больше ничего нет мы вернемся в его начало
+                #(к проврки условия внешенго циала), но условие повторения мы выставили в лож 
+                # следовательно цикл не начнет повторятся и мы перейдем к коду за пределами внешнего цикла
             else:
-                print("\nК сожалению сейчас команда не полная\n")
+                print("\nК сожалению сейчас команда не полная\n") #оповещаем о невозможности и возвращаем к началу провекри анкет команды
         elif action == "2":
-            continue
-        elif action == "3":
-            break
+            continue # возвращаемся к проверке анкет команды
+        elif action == "3": 
+            break #прерываем внутрений цикл и возвращаемся к внешнему циклу 
         elif action == "0":
-            generate = False
+            generate = False  # все тоже самое что дейсвтие 1, но дополнительно выставляем флаг отказа от распределения
             select_group = False
             break
         else:
-            print("Какжеться что-то пошло не так")
+            print("Какжеться что-то пошло не так") #на не предвиденный слычей, хотя его быть не должно
 
-if generate:
-    count_person = len(persons)
-    list_shuffled_index = list(range(0, count_person))
-    shuffle(list_shuffled_index)
+if generate:#если нужно распределение начинем его
+    list_shuffled_index = list(range(0, count_person)) #генеируем список индексов
+    shuffle(list_shuffled_index) #перемешиваем его
     
-    error_index = []
+    #проверяем если индекс остался на своем месте меняем его со значением слева оно точно не на своем месте, 
+    #тк либо отсутвует и мы возмем элемент с конца, или уже проверенно и оно не совподает со своим индексом
     for index in range(0, count_person):
         if index == list_shuffled_index[index]:
             list_shuffled_index[index], list_shuffled_index[index-1] = list_shuffled_index[index-1], list_shuffled_index[index]
 
 
-    path_dir = os.path.join(group_name, "result")
-    result_number = 1
-    while os.path.exists(path_dir):
+    path_dir = os.path.join(group_name, "result") #формирум путь к подпапке результатов
+    result_number = 1 #наслучай если пака с таким именм существует
+    while os.path.exists(path_dir): #подбираем имя папке увеличивая номер на один каждый раз когда находим папку с указаным номером
         path_dir = os.path.join(group_name,f"result_{result_number}")
         result_number+=1
-    os.mkdir(path_dir)
-    print(f"распределение завершенно результат смотри в {path_dir}")
-    for who, whom in enumerate(list_shuffled_index):
-        file_name = f"{persons[who]["name"]}_{who+1}.txt"
-        path = os.path.join(path_dir, file_name)
-        file = open(path, "w")
-        file.write(f"Кому:\n{persons[whom]["name"]}\n")
-        file.write(f"Анкета:\n{persons[whom]["form"]}\n")
-        file.write(f"Что:\n{"\n".join(persons[whom]["wish"])}")
-        file.close()       
+    os.mkdir(path_dir)#срздаем подпапку
+    print(f"распределение завершенно результат смотри в {path_dir}") #вывводим где искать рещултат
+    # who - кто дарит норальный индекс whom - кому значение из масива перемешенных индексов
+    # они там не на своих позициях и получется каждый будет дарить кому-то другому
+    # дубликаты от перемешивания не добовляются, а то что они не на своих позиция мы специально убедилис 
+    # и если унжно было сместили не на свои
+    for who, whom in enumerate(list_shuffled_index): 
+        file_name = f"{persons[who]["name"]}_{who+1}.txt"# формируе имя файла из имени санты и его индекса
+        path = os.path.join(path_dir, file_name)#формируем относительный пуь к файлу
+        file = open(path, "w")#отурываем файл на запись
+        file.write(f"Кому:\n{persons[whom]["name"]}\n") #записываем кому подарок
+        file.write(f"Анкета:\n{persons[whom]["form"]}\n")#из какой анкерты взяты данные для облегчения поиска при дубликатах имен
+        file.write(f"Что:\n{"\n".join(persons[whom]["wish"])}") #записываем список строк пожеланий каждая строка на новой строк
+        file.close()  # закрываем файл
 
 
 
